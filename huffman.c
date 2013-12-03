@@ -2,15 +2,18 @@
 #include <math.h>
 #include "huffman.h"
 
+//This is a struct for the leaf nodes
 struct TreeNode
 {
-	unsigned long count;
 	unsigned char symbol;
-	//Not used
-	//struct TreeNode* left;
+	unsigned long weight;
+	struct TreeNode* next;
+	struct TreeNode* left;
 	struct TreeNode* right;
 };
 
+// This is a struct for the Sum Roots that will be used
+// in creating the binary tree
 struct sumRoot
 {
 	unsigned long sum;
@@ -19,16 +22,23 @@ struct sumRoot
 	struct sumRoot* next;
 };
 
+struct LeafNode
+{
+	unsigned char symbol;
+	unsigned long weight;
+};
+
 typedef struct TreeNode TreeNode;
 typedef struct sumRoot sumRoot;
+typedef struct LeafNode LeafNode;
 
-TreeNode* createNode(unsigned long count, unsigned char symbol)
+TreeNode* createNode(unsigned char symbol, unsigned long weight)
 {
 	TreeNode* tree = malloc(sizeof (TreeNode));
-	tree->count = count;
 	tree->symbol = symbol;
-	//Not used
-	//tree->left = NULL;
+	tree->weight = weight;
+	tree->next = NULL;
+	tree->left = NULL;
 	tree->right = NULL;
 	return tree;
 }
@@ -42,52 +52,37 @@ sumRoot* createsumRoot(unsigned long sum)
 	tree->next = NULL;
 }
 
-// This is a function to construct leaf nodes from symbols 
-// and weights (count)
-/*
-TreeNode* buildNodes(unsigned long count[], unsigned char ascii[])
+LeafNode* createLeafNode(unsigned char symbol, unsigned long weight)
 {
-	int i;
-	TreeNode* root = NULL;
-
-	for (i = 0; i < 256; i++)
-	{
-		if (count[i] > 0)
-		{
-			TreeNode* root = NULL;
-			root = createNode(count[i], ascii[i]);
-		}
-			//TreeNode* root = NULL;
-	}
-
-	return root;
+	LeafNode* node = malloc(sizeof (LeafNode));
+	node->symbol = symbol;
+	node->weight = weight;
 }
-*/
 
 // Function to build the linked list of leaf nodes
 TreeNode* insertSorted(TreeNode* head, unsigned long count, unsigned char symbol)
 {
 	TreeNode* current = head;
-	TreeNode* newNode = createNode(count, symbol);
+	TreeNode* newNode = createNode(symbol, count);
 
-	if (current == NULL || count < current->count)
+	if (current == NULL || count < current->weight)
 	{
-		newNode->right = current;
+		newNode->next = current;
 		return newNode;
 	}
 	else
 	{
-		while (current->right != NULL && current->right->count <= count)
+		while (current->next != NULL && current->next->weight <= count)
 		{
-			if (current->right->count < count)
+			if (current->next->weight < count)
 			{
-				current = current->right;
+				current = current->next;
 			}
 			else
 			{
-				if (current->right->symbol < symbol)
+				if (current->next->symbol < symbol)
 				{
-					current = current->right;
+					current = current->next;
 				}
 				else
 				{
@@ -95,8 +90,8 @@ TreeNode* insertSorted(TreeNode* head, unsigned long count, unsigned char symbol
 				}
 			}
 		}
-		newNode->right = current->right;
-		current->right = newNode;
+		newNode->next = current->next;
+		current->next = newNode;
 		return head;
 	}
 }
@@ -104,11 +99,35 @@ TreeNode* insertSorted(TreeNode* head, unsigned long count, unsigned char symbol
 // This is a function to convert linked list to binary tree
 TreeNode* listtoTree(TreeNode* head)
 {
-	TreeNode* current = head;
-	TreeNode* newHead = head;
-	TreeNode* newNode = createNode(NULL, NULL);
 	unsigned long sum = 0;
+	TreeNode* current = head;
+	//sumRoot* root = head;
+	TreeNode* left = createNode(current->symbol, current->weight);
+	TreeNode* right = createNode(current->next->symbol, current->next->weight);
+	//sumRoot* right = createsumRoot(current->right->count);
+	
+	//sum = current->count + current->right->count;
+	sum = left->weight + right->weight;
+	//sumRoot* root = createsumRoot(sum);
+	TreeNode* root = createNode(NULL, sum);
+	//left = current;
+	//right = current->right;
 
+	root->left = left;
+	root->right = right;
+	root->next = current->next->next;
+
+	//current = 
+
+	current = current->next->next;
+
+	sum = current->weight + current->next->weight;
+	root = createsumRoot(sum);
+
+	root->left = current;
+	root->right = current->next;
+
+	/*
 	while (current->right != NULL)
 	{
 		sum = current->count + current->right->count;
@@ -121,47 +140,25 @@ TreeNode* listtoTree(TreeNode* head)
 		current->right->right = NULL;
 		listtoTree(newHead);
 	}
+	*/
 
 	return head;
 }
 
 // This is a function to print out the nodes with their 
 // symbols and weigts
-/*
-void printLeavesHelper(TreeNode* root)
-{
-	if (root != NULL)
-	{
-		printLeavesHelper(root->left);
-		printLeavesHelper(root->right);
-		if (root->left == NULL && root->right == NULL)
-		{
-			printf("%c:", root->symbol);
-			printf("%d ", root->count);
-		}
-	}
-}
-*/
-
 void printList(TreeNode* head)
 {
 	TreeNode* current = head;
 	while (current != NULL)
 	{
 		printf("%c:", current->symbol);
-		printf("%d ", current->count);
-		current = current->right;
+		printf("%d ", current->weight);
+		current = current->next;
 	}
 	printf("\n");
 }
 
-/*
-void printLeaves(TreeNode* root)
-{
-	printLeavesHelper(root);
-	printf("\n");
-}
-*/
 
 /* Free function but not quite working!
 void freeTree(TreeNode* root)
